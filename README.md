@@ -42,3 +42,20 @@ El programa te guiará a través del proceso de autenticación para ambas cuenta
 
 - La API de YouTube tiene cuotas diarias que pueden limitar el número de suscripciones que se pueden transferir en un día
 - Se requiere autorización manual para ambas cuentas 
+
+## Solución de problemas
+
+### Error: "Acceso bloqueado: Transferencia de Youtube no ha completado el proceso de verificación de Google"
+
+Si recibes este error durante la autenticación, significa que tu aplicación está en modo de prueba y necesitas añadir tu correo electrónico como usuario de prueba en la Google Cloud Console.
+
+Para resolver este problema:
+
+1. Ve a la [Google Cloud Console](https://console.cloud.google.com/)
+2. Selecciona tu proyecto
+3. Ve a "APIs y servicios" > "Pantalla de consentimiento de OAuth"
+4. En la sección "Usuarios de prueba", añade tu correo electrónico
+5. Guarda los cambios
+6. Ejecuta nuevamente el script
+
+Para instrucciones más detalladas, consulta la sección "Solución de problemas" en el archivo [INSTRUCCIONES_API.md](INSTRUCCIONES_API.md). 

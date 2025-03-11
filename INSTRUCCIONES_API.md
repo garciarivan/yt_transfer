@@ -47,4 +47,43 @@ Para utilizar este programa, necesitarás crear un proyecto en Google Cloud Cons
 
 - La API de YouTube tiene límites de cuota. Por defecto, tienes 10,000 unidades por día.
 - Cada operación de suscripción consume 50 unidades, lo que significa que puedes transferir aproximadamente 200 suscripciones por día con la cuota predeterminada.
-- Si necesitas transferir más suscripciones, puedes solicitar un aumento de cuota en la sección "APIs y servicios" > "Cuotas". 
+- Si necesitas transferir más suscripciones, puedes solicitar un aumento de cuota en la sección "APIs y servicios" > "Cuotas".
+
+## Solución de problemas
+
+### Error: "Acceso bloqueado: Transferencia de Youtube no ha completado el proceso de verificación de Google"
+
+Si recibes este error (Error 403: access_denied), significa que tu aplicación está en modo de prueba y no ha sido verificada por Google. Para solucionarlo, tienes varias opciones:
+
+#### Opción 1: Añadirte como usuario de prueba (Recomendada)
+
+1. Ve a la [Google Cloud Console](https://console.cloud.google.com/)
+2. Selecciona tu proyecto
+3. Ve a "APIs y servicios" > "Pantalla de consentimiento de OAuth"
+4. En la sección "Usuarios de prueba", añade tu correo electrónico
+5. Guarda los cambios
+6. Regenera el archivo client_secrets.json si es necesario
+7. Ejecuta nuevamente el script
+
+#### Opción 2: Configurar la aplicación solo para uso personal
+
+Si solo vas a usar esta aplicación tú mismo y tienes una cuenta de Google Workspace:
+
+1. Ve a la [Google Cloud Console](https://console.cloud.google.com/)
+2. Selecciona tu proyecto
+3. Ve a "APIs y servicios" > "Pantalla de consentimiento de OAuth"
+4. Cambia el tipo de usuario a "Interno"
+   - Esto limitará el uso a personas dentro de tu organización
+   - No requiere verificación de Google
+
+#### Opción 3: Completar el proceso de verificación
+
+Si planeas distribuir la aplicación a otros usuarios:
+
+1. Ve a la [Google Cloud Console](https://console.cloud.google.com/)
+2. Selecciona tu proyecto
+3. Ve a "APIs y servicios" > "Pantalla de consentimiento de OAuth"
+4. Completa toda la información requerida (política de privacidad, términos de servicio, etc.)
+5. Envía la aplicación para verificación
+
+**Nota importante**: Para uso personal, la Opción 1 es la más rápida y sencilla. 
