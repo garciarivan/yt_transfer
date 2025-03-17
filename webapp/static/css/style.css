@@ -1,0 +1,254 @@
+/* Estilos personalizados para la aplicación de transferencia de YouTube */
+
+body {
+    background-color: #f8f9fa;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.container {
+    max-width: 900px;
+}
+
+header {
+    margin-bottom: 2rem;
+}
+
+header h1 {
+    color: #ff0000; /* Color rojo de YouTube */
+    font-weight: 700;
+}
+
+.card {
+    border: none;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    margin-bottom: 2rem;
+}
+
+.card-header {
+    border-radius: 10px 10px 0 0 !important;
+    font-weight: 600;
+}
+
+.btn-outline-primary {
+    border-color: #4285F4;
+    color: #4285F4;
+}
+
+.btn-outline-primary:hover {
+    background-color: #4285F4;
+    color: white;
+}
+
+.btn-success {
+    background-color: #34A853;
+    border-color: #34A853;
+}
+
+.btn-success:hover {
+    background-color: #2E8B57;
+    border-color: #2E8B57;
+}
+
+.alert {
+    border-radius: 8px;
+    font-weight: 500;
+}
+
+.alert-success {
+    background-color: #d4edda;
+    border-color: #c3e6cb;
+    color: #155724;
+}
+
+.alert-error {
+    background-color: #f8d7da;
+    border-color: #f5c6cb;
+    color: #721c24;
+}
+
+footer {
+    font-size: 0.9rem;
+}
+
+/* Nuevos estilos para la versión mejorada */
+
+.auth-card {
+    border-radius: 8px;
+    border: 1px solid #dee2e6;
+    transition: all 0.3s ease;
+}
+
+.auth-card.border-success {
+    border-color: #34A853;
+    background-color: #f8fff9;
+}
+
+.auth-card.border-danger {
+    border-color: #EA4335;
+    background-color: #fff8f8;
+}
+
+.badge {
+    font-weight: 500;
+    padding: 0.4em 0.6em;
+}
+
+.channel-avatar {
+    width: 32px;
+    height: 32px;
+    background-color: #4285F4;
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+}
+
+.subscription-list {
+    max-height: 600px;
+    overflow-y: auto;
+    padding-right: 5px;
+}
+
+.subscription-item .card {
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.subscription-item .card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+}
+
+.subscription-item .form-check-label {
+    cursor: pointer;
+}
+
+.subscription-item .form-check-input:checked + .form-check-label .card {
+    border-color: #34A853;
+}
+
+/* Estilos para el menú de transferencia */
+.menu-container {
+    padding: 10px;
+}
+
+.menu-header {
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    padding: 10px;
+    margin-bottom: 20px;
+}
+
+.menu-header h3 {
+    margin: 0;
+    font-weight: 600;
+    color: #333;
+}
+
+.menu-option {
+    transition: all 0.3s ease;
+    border: 1px solid #e9ecef;
+}
+
+.menu-option:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+}
+
+.menu-option.highlight {
+    border: 2px solid #34A853;
+    background-color: #f8fff9;
+}
+
+.option-icon {
+    font-size: 2rem;
+    height: 60px;
+    width: 60px;
+    line-height: 60px;
+    margin: 0 auto;
+    border-radius: 50%;
+    background-color: #f8f9fa;
+    color: #333;
+}
+
+.menu-option:nth-child(1) .option-icon {
+    color: #4285F4; /* Azul de Google */
+}
+
+.menu-option:nth-child(2) .option-icon {
+    color: #EA4335; /* Rojo de Google */
+}
+
+.menu-option:nth-child(3) .option-icon {
+    color: #FBBC05; /* Amarillo de Google */
+}
+
+.menu-option:nth-child(4) .option-icon {
+    color: #34A853; /* Verde de Google */
+    background-color: #f8fff9;
+}
+
+/* Estilos para las listas de reproducción */
+.playlist-placeholder {
+    width: 80px;
+    height: 60px;
+    background-color: #f1f1f1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+}
+
+.playlist-placeholder i {
+    font-size: 2rem;
+    color: #666;
+}
+
+.playlist-title {
+    font-weight: 600;
+    line-height: 1.3;
+}
+
+.playlist-description {
+    color: #666;
+    margin-bottom: 0;
+    line-height: 1.3;
+}
+
+/* Estilos para los videos con Me gusta */
+.video-title {
+    font-weight: 600;
+    line-height: 1.3;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* Estilos para dispositivos móviles */
+@media (max-width: 768px) {
+    .subscription-list {
+        max-height: 400px;
+    }
+    
+    .d-flex.justify-content-between {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .d-flex.justify-content-between .input-group {
+        max-width: 100%;
+    }
+    
+    .d-flex.mb-2 {
+        flex-direction: column;
+    }
+    
+    .d-flex.mb-2 .me-3 {
+        margin-right: 0 !important;
+        margin-bottom: 10px;
+    }
+} 

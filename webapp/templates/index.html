@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transferencia de Suscripciones de YouTube</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header class="text-center my-5">
+            <h1 class="display-4">Transferencia de YouTube</h1>
+            <p class="lead">Transfiere automáticamente tu contenido de una cuenta de YouTube a otra</p>
+        </header>
+
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }} alert-dismissible fade show">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h2 class="h5 mb-0">Paso 1: Autenticación</h2>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <div class="auth-card p-3 {% if auth_status.source %}border-success{% else %}border-danger{% endif %}">
+                                    <h3 class="h6 mb-3">Cuenta de origen</h3>
+                                    {% if auth_status.source %}
+                                        <div class="d-flex align-items-center mb-3">
+                                            <span class="badge bg-success me-2"><i class="bi bi-check-circle"></i> Conectada</span>
+                                            <span class="text-truncate">{{ auth_status.source_email }}</span>
+                                        </div>
+                                        <div class="d-grid gap-2">
+                                            <a href="{{ url_for('logout_source') }}" class="btn btn-outline-danger btn-sm">
+                                                <i class="bi bi-box-arrow-right"></i> Desconectar
+                                            </a>
+                                        </div>
+                                    {% else %}
+                                        <div class="d-flex align-items-center mb-3">
+                                            <span class="badge bg-danger me-2"><i class="bi bi-x-circle"></i> No conectada</span>
+                                        </div>
+                                        <div class="d-grid">
+                                            <a href="{{ url_for('auth_source') }}" class="btn btn-outline-primary">
+                                                <i class="bi bi-google"></i> Conectar cuenta de origen
+                                            </a>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <div class="auth-card p-3 {% if auth_status.target %}border-success{% else %}border-danger{% endif %}">
+                                    <h3 class="h6 mb-3">Cuenta de destino</h3>
+                                    {% if auth_status.target %}
+                                        <div class="d-flex align-items-center mb-3">
+                                            <span class="badge bg-success me-2"><i class="bi bi-check-circle"></i> Conectada</span>
+                                            <span class="text-truncate">{{ auth_status.target_email }}</span>
+                                        </div>
+                                        <div class="d-grid gap-2">
+                                            <a href="{{ url_for('logout_target') }}" class="btn btn-outline-danger btn-sm">
+                                                <i class="bi bi-box-arrow-right"></i> Desconectar
+                                            </a>
+                                        </div>
+                                    {% else %}
+                                        <div class="d-flex align-items-center mb-3">
+                                            <span class="badge bg-danger me-2"><i class="bi bi-x-circle"></i> No conectada</span>
+                                        </div>
+                                        <div class="d-grid">
+                                            <a href="{{ url_for('auth_target') }}" class="btn btn-outline-primary">
+                                                <i class="bi bi-google"></i> Conectar cuenta de destino
+                                            </a>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header bg-success text-white">
+                        <h2 class="h5 mb-0">Paso 2: Menú de Transferencia</h2>
+                    </div>
+                    <div class="card-body">
+                        <div class="menu-container">
+                            <div class="menu-header text-center mb-4">
+                                <h3 class="h5">=== Menú de Transferencia ===</h3>
+                            </div>
+                            
+                            <div class="row row-cols-1 row-cols-md-2 g-4">
+                                <!-- Opción 1: Transferir suscripciones -->
+                                <div class="col">
+                                    <div class="card h-100 menu-option">
+                                        <div class="card-body text-center">
+                                            <div class="option-icon mb-3">
+                                                <i class="bi bi-people-fill"></i>
+                                            </div>
+                                            <h4 class="h6">1. Transferir suscripciones</h4>
+                                            <p class="small text-muted">Transfiere tus canales suscritos</p>
+                                            <div class="d-grid gap-2">
+                                                <a href="{{ url_for('select_subscriptions') }}" class="btn btn-outline-primary btn-sm" {% if not auth_status.source %}disabled{% endif %}>
+                                                    Seleccionar canales
+                                                </a>
+                                                <form action="{{ url_for('transfer') }}" method="post">
+                                                    <input type="hidden" name="transfer_type" value="subscriptions">
+                                                    <button type="submit" class="btn btn-primary btn-sm w-100" {% if not auth_status.source or not auth_status.target %}disabled{% endif %}>
+                                                        Transferir todos
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Opción 2: Transferir videos con Me gusta -->
+                                <div class="col">
+                                    <div class="card h-100 menu-option">
+                                        <div class="card-body text-center">
+                                            <div class="option-icon mb-3">
+                                                <i class="bi bi-hand-thumbs-up-fill"></i>
+                                            </div>
+                                            <h4 class="h6">2. Transferir videos con 'Me gusta'</h4>
+                                            <p class="small text-muted">Transfiere tus videos favoritos</p>
+                                            <div class="d-grid gap-2">
+                                                <a href="{{ url_for('select_liked_videos') }}" class="btn btn-outline-primary btn-sm" {% if not auth_status.source %}disabled{% endif %}>
+                                                    Seleccionar videos
+                                                </a>
+                                                <form action="{{ url_for('transfer') }}" method="post">
+                                                    <input type="hidden" name="transfer_type" value="liked_videos">
+                                                    <button type="submit" class="btn btn-primary btn-sm w-100" {% if not auth_status.source or not auth_status.target %}disabled{% endif %}>
+                                                        Transferir todos
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Opción 3: Transferir listas de reproducción -->
+                                <div class="col">
+                                    <div class="card h-100 menu-option">
+                                        <div class="card-body text-center">
+                                            <div class="option-icon mb-3">
+                                                <i class="bi bi-collection-play-fill"></i>
+                                            </div>
+                                            <h4 class="h6">3. Transferir listas de reproducción</h4>
+                                            <p class="small text-muted">Transfiere tus listas personalizadas</p>
+                                            <div class="d-grid gap-2">
+                                                <a href="{{ url_for('select_playlists') }}" class="btn btn-outline-primary btn-sm" {% if not auth_status.source %}disabled{% endif %}>
+                                                    Seleccionar listas
+                                                </a>
+                                                <form action="{{ url_for('transfer') }}" method="post">
+                                                    <input type="hidden" name="transfer_type" value="playlists">
+                                                    <button type="submit" class="btn btn-primary btn-sm w-100" {% if not auth_status.source or not auth_status.target %}disabled{% endif %}>
+                                                        Transferir todas
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Opción 4: Transferir todo -->
+                                <div class="col">
+                                    <div class="card h-100 menu-option highlight">
+                                        <div class="card-body text-center">
+                                            <div class="option-icon mb-3">
+                                                <i class="bi bi-lightning-charge-fill"></i>
+                                            </div>
+                                            <h4 class="h6">4. Transferir todo</h4>
+                                            <p class="small text-muted">Transfiere todo el contenido de una vez</p>
+                                            <div class="d-grid">
+                                                <form action="{{ url_for('transfer') }}" method="post" id="transfer-all-form">
+                                                    <input type="hidden" name="transfer_type" value="all">
+                                                    <button type="submit" class="btn btn-success w-100" {% if not auth_status.source or not auth_status.target %}disabled{% endif %}>
+                                                        Transferir todo
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        {% if not auth_status.source or not auth_status.target %}
+                            <div class="alert alert-warning mt-4">
+                                <i class="bi bi-exclamation-triangle"></i> Debes conectar ambas cuentas antes de poder transferir contenido.
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer class="text-center mt-5 mb-3">
+            <p class="text-muted">© 2025 Transferencia de YouTube</p>
+        </footer>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html> 

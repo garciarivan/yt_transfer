@@ -1,0 +1,10 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+
+# always use PowerShell as default terminal
+
+- You can @ files here
+- You can use markdown but dont have to

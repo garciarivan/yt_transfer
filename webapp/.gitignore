@@ -1,0 +1,23 @@
+# Archivos de credenciales y tokens
+client_secrets.json
+*.pickle
+
+# Archivos de caché de Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Entorno virtual
+venv/
+env/
+ENV/
+
+# Archivos de sesión Flask
+flask_session/
+
+# Archivos de log
+*.log
+
+# Archivos del sistema operativo
+.DS_Store
+Thumbs.db 
