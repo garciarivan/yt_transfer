@@ -1,17 +1,60 @@
 // Script para la aplicación de transferencia de suscripciones de YouTube
 
 document.addEventListener('DOMContentLoaded', function() {
-    // Ya no ocultamos las alertas automáticamente, ahora usan el botón de cierre
+    // Mostrar modal de error de cuota si hay una alerta relacionada con la cuota
+    const alertElements = document.querySelectorAll('.alert.alert-warning');
+    alertElements.forEach(alert => {
+        if (alert.textContent.toLowerCase().includes('límite diario') || 
+            alert.textContent.toLowerCase().includes('cuota') || 
+            alert.textContent.toLowerCase().includes('24 horas')) {
+            
+            // Ocultar la alerta original
+            alert.style.display = 'none';
+            
+            // Mostrar modal de error de cuota
+            const quotaErrorModal = new bootstrap.Modal(document.getElementById('quotaErrorModal'));
+            quotaErrorModal.show();
+        }
+    });
     
-    // Añadir confirmación antes de iniciar la transferencia completa
-    const transferForm = document.querySelector('form[action*="transfer"]');
-    if (transferForm) {
-        transferForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            if (confirm('¿Estás seguro de que deseas iniciar la transferencia de todas las suscripciones? Este proceso puede tardar varios minutos dependiendo del número de suscripciones.')) {
-                this.submit();
+    // Manejo de los formularios de transferencia y modales
+    const transferForms = document.querySelectorAll('.transfer-form');
+    
+    transferForms.forEach(form => {
+        form.addEventListener('submit', function(e) {
+            const transferType = this.getAttribute('data-transfer-type') || 'contenido';
+            
+            // Solo mostrar la confirmación si no estamos en las páginas de selección
+            // porque esas ya tienen su propia confirmación
+            if (!this.id.includes('subscription-form') && 
+                !this.id.includes('liked-videos-form') && 
+                !this.id.includes('playlists-form')) {
+                
+                e.preventDefault();
+                
+                if (!confirm(`¿Estás seguro de que deseas transferir ${transferType}? Este proceso puede tardar varios minutos.`)) {
+                    return false;
+                }
+                
+                // Mostrar modal de carga
+                const loadingModal = new bootstrap.Modal(document.getElementById('loadingModal'));
+                document.getElementById('transferTypeText').innerText = `Transfiriendo ${transferType}...`;
+                loadingModal.show();
+                
+                // Enviar el formulario
+                setTimeout(() => {
+                    this.submit();
+                }, 500);
             }
         });
+    });
+    
+    // Mostrar modal de resumen si hay datos de resumen
+    if (document.getElementById('summaryModal') && 
+        document.querySelector('#summaryModal .row .col-md-4')) {
+        
+        const summaryModal = new bootstrap.Modal(document.getElementById('summaryModal'));
+        summaryModal.show();
     }
     
     // Animación para las tarjetas de autenticación
@@ -26,48 +69,6 @@ document.addEventListener('DOMContentLoaded', function() {
             this.style.transform = 'translateY(0)';
             this.style.boxShadow = 'none';
         });
-    });
-    
-    // Confirmación específica para cada tipo de transferencia
-    const transferAllForm = document.getElementById('transfer-all-form');
-    if (transferAllForm) {
-        transferAllForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            if (confirm('¿Estás seguro de que deseas transferir TODO el contenido (suscripciones, videos con Me gusta y listas de reproducción)? Este proceso puede tardar varios minutos.')) {
-                this.submit();
-            }
-        });
-    }
-    
-    // Manejar formularios de transferencia individuales
-    const transferForms = document.querySelectorAll('form[action*="transfer"]');
-    transferForms.forEach(form => {
-        if (form.id !== 'transfer-all-form' && form.querySelector('input[name="transfer_type"]')) {
-            form.addEventListener('submit', function(e) {
-                e.preventDefault();
-                
-                const transferType = this.querySelector('input[name="transfer_type"]').value;
-                let confirmMessage = '';
-                
-                switch (transferType) {
-                    case 'subscriptions':
-                        confirmMessage = '¿Estás seguro de que deseas transferir todas tus suscripciones? Este proceso puede tardar varios minutos.';
-                        break;
-                    case 'liked_videos':
-                        confirmMessage = '¿Estás seguro de que deseas transferir todos tus videos con Me gusta? Este proceso puede tardar varios minutos.';
-                        break;
-                    case 'playlists':
-                        confirmMessage = '¿Estás seguro de que deseas transferir todas tus listas de reproducción? Este proceso puede tardar varios minutos.';
-                        break;
-                    default:
-                        confirmMessage = '¿Estás seguro de que deseas iniciar esta transferencia? Este proceso puede tardar varios minutos.';
-                }
-                
-                if (confirm(confirmMessage)) {
-                    this.submit();
-                }
-            });
-        }
     });
     
     // Efectos visuales para el menú de opciones
@@ -93,6 +94,24 @@ document.addEventListener('DOMContentLoaded', function() {
             const icon = this.querySelector('.option-icon i');
             if (icon) {
                 icon.style.transform = 'rotate(0deg)';
+            }
+        });
+    });
+    
+    // Animación para los logos de cuenta
+    const accountAvatars = document.querySelectorAll('.account-avatar');
+    accountAvatars.forEach(avatar => {
+        avatar.addEventListener('mouseenter', function() {
+            const img = this.querySelector('img');
+            if (img) {
+                img.style.transform = 'scale(1.2) rotate(10deg)';
+            }
+        });
+        
+        avatar.addEventListener('mouseleave', function() {
+            const img = this.querySelector('img');
+            if (img) {
+                img.style.transform = '';
             }
         });
     });

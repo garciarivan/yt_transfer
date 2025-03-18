@@ -40,7 +40,26 @@
                                     {% if auth_status.source %}
                                         <div class="d-flex align-items-center mb-3">
                                             <span class="badge bg-success me-2"><i class="bi bi-check-circle"></i> Conectada</span>
-                                            <span class="text-truncate">{{ auth_status.source_email }}</span>
+                                            <div class="account-info">
+                                                {% if auth_status.source_email %}
+                                                <div class="account-avatar">
+                                                    {% if auth_status.source_picture %}
+                                                        <img src="{{ auth_status.source_picture }}" alt="Avatar" class="rounded-circle">
+                                                    {% else %}
+                                                        <div class="avatar-initials" style="background-color: #4285F4;">
+                                                            {{ auth_status.source_email|truncate(1, True, '') if auth_status.source_email else 'U' }}
+                                                        </div>
+                                                    {% endif %}
+                                                </div>
+                                                <span class="account-name fw-bold">
+                                                    {% if auth_status.source_name %}
+                                                        {{ auth_status.source_name }}
+                                                    {% else %}
+                                                        {{ auth_status.source_email }}
+                                                    {% endif %}
+                                                </span>
+                                                {% endif %}
+                                            </div>
                                         </div>
                                         <div class="d-grid gap-2">
                                             <a href="{{ url_for('logout_source') }}" class="btn btn-outline-danger btn-sm">
@@ -65,7 +84,26 @@
                                     {% if auth_status.target %}
                                         <div class="d-flex align-items-center mb-3">
                                             <span class="badge bg-success me-2"><i class="bi bi-check-circle"></i> Conectada</span>
-                                            <span class="text-truncate">{{ auth_status.target_email }}</span>
+                                            <div class="account-info">
+                                                {% if auth_status.target_email %}
+                                                <div class="account-avatar">
+                                                    {% if auth_status.target_picture %}
+                                                        <img src="{{ auth_status.target_picture }}" alt="Avatar" class="rounded-circle">
+                                                    {% else %}
+                                                        <div class="avatar-initials" style="background-color: #34A853;">
+                                                            {{ auth_status.target_email|truncate(1, True, '') if auth_status.target_email else 'U' }}
+                                                        </div>
+                                                    {% endif %}
+                                                </div>
+                                                <span class="account-name fw-bold">
+                                                    {% if auth_status.target_name %}
+                                                        {{ auth_status.target_name }}
+                                                    {% else %}
+                                                        {{ auth_status.target_email }}
+                                                    {% endif %}
+                                                </span>
+                                                {% endif %}
+                                            </div>
                                         </div>
                                         <div class="d-grid gap-2">
                                             <a href="{{ url_for('logout_target') }}" class="btn btn-outline-danger btn-sm">
@@ -112,7 +150,7 @@
                                                 <a href="{{ url_for('select_subscriptions') }}" class="btn btn-outline-primary btn-sm" {% if not auth_status.source %}disabled{% endif %}>
                                                     Seleccionar canales
                                                 </a>
-                                                <form action="{{ url_for('transfer') }}" method="post">
+                                                <form action="{{ url_for('transfer') }}" method="post" class="transfer-form" data-transfer-type="suscripciones">
                                                     <input type="hidden" name="transfer_type" value="subscriptions">
                                                     <button type="submit" class="btn btn-primary btn-sm w-100" {% if not auth_status.source or not auth_status.target %}disabled{% endif %}>
                                                         Transferir todos
@@ -136,7 +174,7 @@
                                                 <a href="{{ url_for('select_liked_videos') }}" class="btn btn-outline-primary btn-sm" {% if not auth_status.source %}disabled{% endif %}>
                                                     Seleccionar videos
                                                 </a>
-                                                <form action="{{ url_for('transfer') }}" method="post">
+                                                <form action="{{ url_for('transfer') }}" method="post" class="transfer-form" data-transfer-type="videos con Me gusta">
                                                     <input type="hidden" name="transfer_type" value="liked_videos">
                                                     <button type="submit" class="btn btn-primary btn-sm w-100" {% if not auth_status.source or not auth_status.target %}disabled{% endif %}>
                                                         Transferir todos
@@ -160,7 +198,7 @@
                                                 <a href="{{ url_for('select_playlists') }}" class="btn btn-outline-primary btn-sm" {% if not auth_status.source %}disabled{% endif %}>
                                                     Seleccionar listas
                                                 </a>
-                                                <form action="{{ url_for('transfer') }}" method="post">
+                                                <form action="{{ url_for('transfer') }}" method="post" class="transfer-form" data-transfer-type="listas de reproducción">
                                                     <input type="hidden" name="transfer_type" value="playlists">
                                                     <button type="submit" class="btn btn-primary btn-sm w-100" {% if not auth_status.source or not auth_status.target %}disabled{% endif %}>
                                                         Transferir todas
@@ -181,7 +219,7 @@
                                             <h4 class="h6">4. Transferir todo</h4>
                                             <p class="small text-muted">Transfiere todo el contenido de una vez</p>
                                             <div class="d-grid">
-                                                <form action="{{ url_for('transfer') }}" method="post" id="transfer-all-form">
+                                                <form action="{{ url_for('transfer') }}" method="post" id="transfer-all-form" class="transfer-form" data-transfer-type="todo el contenido">
                                                     <input type="hidden" name="transfer_type" value="all">
                                                     <button type="submit" class="btn btn-success w-100" {% if not auth_status.source or not auth_status.target %}disabled{% endif %}>
                                                         Transferir todo
@@ -211,5 +249,157 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+
+    <!-- Modal de carga durante la transferencia -->
+    <div class="modal fade" id="loadingModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="loadingModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="loadingModalLabel">Transferencia en proceso</h5>
+                </div>
+                <div class="modal-body text-center py-4">
+                    <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
+                        <span class="visually-hidden">Cargando...</span>
+                    </div>
+                    <h5 id="transferTypeText">Transfiriendo...</h5>
+                    <p class="text-muted">Este proceso puede tardar varios minutos dependiendo de la cantidad de contenido.</p>
+                    <div class="progress mt-3">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 100%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de resumen de transferencia -->
+    <div class="modal fade" id="summaryModal" data-bs-backdrop="static" tabindex="-1" aria-labelledby="summaryModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title" id="summaryModalLabel">Resumen de la transferencia</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    {% if transfer_summary %}
+                    <div class="row">
+                        {% if 'subscriptions' in transfer_summary %}
+                        <div class="col-md-4 mb-3">
+                            <div class="card h-100 border-primary">
+                                <div class="card-header bg-primary text-white">
+                                    <i class="bi bi-people-fill me-2"></i> Suscripciones
+                                </div>
+                                <div class="card-body">
+                                    <div class="mb-2">
+                                        <span class="badge bg-success"><i class="bi bi-check-circle"></i> {{ transfer_summary.subscriptions.success }}</span>
+                                        <span class="ms-1">Transferidas</span>
+                                    </div>
+                                    <div class="mb-2">
+                                        <span class="badge bg-warning text-dark"><i class="bi bi-exclamation-circle"></i> {{ transfer_summary.subscriptions.existing }}</span>
+                                        <span class="ms-1">Ya existentes</span>
+                                    </div>
+                                    <div>
+                                        <span class="badge bg-danger"><i class="bi bi-x-circle"></i> {{ transfer_summary.subscriptions.failed }}</span>
+                                        <span class="ms-1">Fallidas</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if 'liked_videos' in transfer_summary %}
+                        <div class="col-md-4 mb-3">
+                            <div class="card h-100 border-danger">
+                                <div class="card-header bg-danger text-white">
+                                    <i class="bi bi-hand-thumbs-up-fill me-2"></i> Videos con "Me gusta"
+                                </div>
+                                <div class="card-body">
+                                    <div class="mb-2">
+                                        <span class="badge bg-success"><i class="bi bi-check-circle"></i> {{ transfer_summary.liked_videos.success }}</span>
+                                        <span class="ms-1">Transferidos</span>
+                                    </div>
+                                    <div class="mb-2">
+                                        <span class="badge bg-warning text-dark"><i class="bi bi-exclamation-circle"></i> {{ transfer_summary.liked_videos.existing }}</span>
+                                        <span class="ms-1">Ya existentes</span>
+                                    </div>
+                                    <div>
+                                        <span class="badge bg-danger"><i class="bi bi-x-circle"></i> {{ transfer_summary.liked_videos.failed }}</span>
+                                        <span class="ms-1">Fallidos</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if 'playlists' in transfer_summary %}
+                        <div class="col-md-4 mb-3">
+                            <div class="card h-100 border-warning">
+                                <div class="card-header bg-warning text-dark">
+                                    <i class="bi bi-collection-play-fill me-2"></i> Listas de reproducción
+                                </div>
+                                <div class="card-body">
+                                    <div class="mb-2">
+                                        <span class="badge bg-success"><i class="bi bi-check-circle"></i> {{ transfer_summary.playlists.success }}</span>
+                                        <span class="ms-1">Listas transferidas</span>
+                                    </div>
+                                    <div class="mb-2">
+                                        <span class="badge bg-success"><i class="bi bi-check-circle"></i> {{ transfer_summary.playlists.videos_success }}</span>
+                                        <span class="ms-1">Videos añadidos</span>
+                                    </div>
+                                    <div>
+                                        <span class="badge bg-danger"><i class="bi bi-x-circle"></i> {{ transfer_summary.playlists.failed }}</span>
+                                        <span class="ms-1">Listas fallidas</span>
+                                    </div>
+                                    <div>
+                                        <span class="badge bg-danger"><i class="bi bi-x-circle"></i> {{ transfer_summary.playlists.videos_failed }}</span>
+                                        <span class="ms-1">Videos fallidos</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="alert alert-info mt-3">
+                        <i class="bi bi-info-circle"></i> La transferencia se ha completado. Si algún elemento no se transfirió correctamente, puede intentarlo de nuevo.
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Entendido</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de error de cuota -->
+    <div class="modal fade" id="quotaErrorModal" data-bs-backdrop="static" tabindex="-1" aria-labelledby="quotaErrorModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-warning">
+                    <h5 class="modal-title" id="quotaErrorModalLabel">Límite de cuota alcanzado</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center py-4">
+                    <div class="mb-4">
+                        <i class="bi bi-hourglass-split text-warning" style="font-size: 3rem;"></i>
+                    </div>
+                    <h5 class="mb-3">Límite diario alcanzado</h5>
+                    <p>Has alcanzado el límite diario de la API de YouTube. No te preocupes, esto es normal y ocurre debido a las restricciones de Google.</p>
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i> El proceso se reanudará automáticamente por donde lo dejaste después de 24 horas, cuando se reinicie tu cuota.
+                    </div>
+                    <p class="mt-3">Mientras tanto, puedes:</p>
+                    <ul class="list-group list-group-flush text-start mb-3">
+                        <li class="list-group-item"><i class="bi bi-check-circle-fill text-success me-2"></i> Mantener esta pestaña abierta o cerrarla (tu progreso está guardado)</li>
+                        <li class="list-group-item"><i class="bi bi-check-circle-fill text-success me-2"></i> Regresar mañana para continuar con la transferencia</li>
+                        <li class="list-group-item"><i class="bi bi-check-circle-fill text-success me-2"></i> Ver el resumen parcial en la página principal</li>
+                    </ul>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Entendido</button>
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 </html> 

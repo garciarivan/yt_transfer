@@ -91,7 +91,17 @@ footer {
 
 .badge {
     font-weight: 500;
-    padding: 0.4em 0.6em;
+    padding: 0.5em 0.7em;
+    border-radius: 20px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.badge.bg-success {
+    background-color: #34A853 !important;
+}
+
+.badge.bg-danger {
+    background-color: #EA4335 !important;
 }
 
 .channel-avatar {
@@ -251,4 +261,210 @@ footer {
         margin-right: 0 !important;
         margin-bottom: 10px;
     }
+}
+
+/* Estilos para los avatares de cuenta y la información de cuenta */
+.account-info {
+    overflow: hidden;
+    max-width: calc(100% - 85px);
+    display: flex;
+    align-items: center;
+}
+
+.account-avatar {
+    flex-shrink: 0;
+    position: relative;
+    margin-right: 8px;
+}
+
+.account-avatar img {
+    border: 2px solid #34A853;
+    padding: 1px;
+    background-color: white;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s ease;
+    object-fit: cover;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+}
+
+.auth-card.border-success .account-avatar img {
+    border-color: #34A853;
+}
+
+.auth-card.border-danger .account-avatar img {
+    border-color: #EA4335;
+}
+
+.account-info:hover .account-avatar img {
+    transform: scale(1.15);
+}
+
+.account-name {
+    font-size: 0.9rem;
+    color: #333;
+    max-width: 100%;
+    transition: color 0.2s ease;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.account-info:hover .account-name {
+    color: #EA4335;
+}
+
+.auth-card {
+    position: relative;
+    overflow: hidden;
+}
+
+.auth-card.border-success:before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 5px;
+    height: 100%;
+    background-color: #34A853;
+}
+
+.auth-card.border-danger:before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 5px;
+    height: 100%;
+    background-color: #EA4335;
+}
+
+/* Estilos para el modal de resumen */
+#summaryModal .card {
+    transition: all 0.3s ease;
+}
+
+#summaryModal .card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.15);
+}
+
+#summaryModal .badge {
+    font-size: 1rem;
+    padding: 0.5em 0.7em;
+    margin-right: 0.5rem;
+    min-width: 40px;
+    text-align: center;
+}
+
+#summaryModal .card-header {
+    font-weight: bold;
+}
+
+#summaryModal .modal-content {
+    border: none;
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+}
+
+#summaryModal .modal-header {
+    padding: 1rem 1.5rem;
+}
+
+#summaryModal .modal-body {
+    padding: 1.5rem;
+}
+
+#summaryModal .alert {
+    margin-bottom: 0;
+}
+
+/* Animaciones para el modal de carga */
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+#loadingModal .spinner-border {
+    animation: spinner-border 1s linear infinite, pulse 2s ease-in-out infinite;
+}
+
+#loadingModal .progress-bar {
+    background-image: linear-gradient(45deg, rgba(255,255,255,.15) 25%, transparent 25%, transparent 50%, rgba(255,255,255,.15) 50%, rgba(255,255,255,.15) 75%, transparent 75%, transparent);
+    background-size: 1rem 1rem;
+}
+
+/* Estilos para el modal de error de cuota */
+#quotaErrorModal .modal-content {
+    border: none;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+#quotaErrorModal .modal-header {
+    background-color: #FBBC05;
+    color: #333;
+    border-bottom: none;
+}
+
+#quotaErrorModal .bi-hourglass-split {
+    animation: flip 2s ease infinite;
+    color: #FBBC05;
+}
+
+#quotaErrorModal .list-group-item {
+    border: none;
+    padding-left: 0;
+    padding-right: 0;
+}
+
+#quotaErrorModal .alert-info {
+    background-color: #EDF8FF;
+    border-color: #4285F4;
+    color: #0556B3;
+}
+
+@keyframes flip {
+    0% { transform: rotate(0deg); }
+    20% { transform: rotate(0deg); }
+    50% { transform: rotate(180deg); }
+    80% { transform: rotate(180deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Estilos para avatares con iniciales */
+.avatar-initials {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+    font-size: 14px;
+    border: 2px solid white;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    text-transform: uppercase;
+    transition: transform 0.2s ease;
+    user-select: none;
+}
+
+.account-info:hover .avatar-initials {
+    transform: scale(1.15);
+}
+
+.auth-card.border-success .avatar-initials {
+    border-color: #34A853;
+}
+
+.auth-card.border-danger .avatar-initials {
+    border-color: #EA4335;
 } 

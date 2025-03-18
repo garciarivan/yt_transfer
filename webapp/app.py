@@ -27,6 +27,7 @@ CLIENT_SECRETS_FILE = 'client_secrets.json'
 API_SERVICE_NAME = 'youtube'
 API_VERSION = 'v3'
 SCOPES = ['https://www.googleapis.com/auth/youtube.force-ssl']
+PROFILE_SCOPES = ['https://www.googleapis.com/auth/userinfo.profile', 'https://www.googleapis.com/auth/userinfo.email']
 
 # Archivos para almacenar las credenciales
 SOURCE_TOKEN_PICKLE = 'source_token.pickle'
@@ -71,6 +72,36 @@ def get_authenticated_service(token_pickle, is_source=True, skip_api_check=False
     return googleapiclient.discovery.build(
         API_SERVICE_NAME, API_VERSION, credentials=credentials)
 
+def get_user_info(youtube):
+    """
+    Obtiene información del usuario autenticado utilizando el servicio de YouTube API.
+    
+    Args:
+        youtube: Servicio autenticado de la API de YouTube
+    
+    Returns:
+        Diccionario con información del usuario o None en caso de error
+    """
+    try:
+        # Obtenemos el ID del canal del usuario autenticado
+        channel_request = youtube.channels().list(part="snippet", mine=True)
+        channel_response = channel_request.execute()
+        
+        if not channel_response.get('items'):
+            return None
+        
+        channel = channel_response['items'][0]
+        
+        return {
+            'id': channel['id'],
+            'name': channel['snippet']['title'],
+            'picture': channel['snippet']['thumbnails'].get('default', {}).get('url', ''),
+            'email': f"Canal de YouTube: {channel['snippet']['title']}"
+        }
+    except Exception as e:
+        print(f"Error al obtener información del usuario desde YouTube API: {str(e)}")
+        return None
+
 def get_user_info_from_credentials(token_pickle):
     """
     Obtiene información básica del usuario a partir de las credenciales.
@@ -88,21 +119,50 @@ def get_user_info_from_credentials(token_pickle):
         with open(token_pickle, 'rb') as token:
             credentials = pickle.load(token)
         
-        # Extraer información básica de las credenciales
-        # Esto no hace llamadas a la API de YouTube, solo usa la información de las credenciales
-        if hasattr(credentials, 'id_token') and credentials.id_token:
-            import jwt
-            # Decodificar el token sin verificar la firma
-            token_data = jwt.decode(credentials.id_token, options={"verify_signature": False})
-            return {
-                'email': token_data.get('email', 'Usuario autenticado'),
-                'name': token_data.get('name', 'Usuario')
-            }
+        # Verificar si las credenciales son válidas
+        if not credentials or not credentials.valid:
+            if credentials and credentials.expired and credentials.refresh_token:
+                credentials.refresh(Request())
+            else:
+                return None
         
-        return {'name': 'Usuario autenticado', 'email': 'Cuenta conectada'}
+        # Primero, intentamos obtener la información del token ID
+        if hasattr(credentials, 'id_token') and credentials.id_token:
+            try:
+                import jwt
+                # Decodificar el token sin verificar la firma
+                token_data = jwt.decode(credentials.id_token, options={"verify_signature": False})
+                
+                user_info = {
+                    'email': token_data.get('email', 'Usuario autenticado'),
+                    'name': token_data.get('name', 'Usuario'),
+                    'picture': token_data.get('picture', ''),
+                    'id': token_data.get('sub', '')
+                }
+                
+                if user_info['picture']:
+                    return user_info
+            except Exception as e:
+                print(f"Error al decodificar token ID: {str(e)}")
+        
+        # Si no pudimos obtener la información del token o no tiene imagen,
+        # intentamos obtenerla a través de la API de YouTube
+        try:
+            youtube = googleapiclient.discovery.build(
+                API_SERVICE_NAME, API_VERSION, credentials=credentials)
+            yt_user_info = get_user_info(youtube)
+            
+            if yt_user_info:
+                return yt_user_info
+        except Exception as e:
+            print(f"Error al obtener información del usuario desde YouTube API: {str(e)}")
+        
+        # Si todo lo demás falla, devolvemos información básica
+        return {'name': 'Usuario autenticado', 'email': 'Cuenta conectada', 'picture': '', 'id': ''}
+    
     except Exception as e:
-        print(f"Error al obtener información del usuario: {str(e)}")
-        return None
+        print(f"Error general al obtener información del usuario: {str(e)}")
+        return {'name': 'Usuario autenticado', 'email': 'Cuenta conectada', 'picture': '', 'id': ''}
 
 def get_subscriptions(youtube):
     """
@@ -525,37 +585,38 @@ def transfer_playlists(youtube_source, youtube_target, playlists):
 
 def check_auth_status():
     """
-    Verifica el estado de autenticación de las cuentas sin hacer llamadas a la API.
+    Verifica el estado de autenticación de ambas cuentas.
     
     Returns:
-        Diccionario con el estado de autenticación de cada cuenta
+        Diccionario con el estado de autenticación
     """
-    auth_status = {
-        'source': False,
-        'source_email': None,
-        'target': False,
-        'target_email': None
+    source_auth = os.path.exists(SOURCE_TOKEN_PICKLE)
+    target_auth = os.path.exists(TARGET_TOKEN_PICKLE)
+    
+    # Obtener información de los usuarios si están autenticados
+    source_user_info = get_user_info_from_credentials(SOURCE_TOKEN_PICKLE) if source_auth else None
+    target_user_info = get_user_info_from_credentials(TARGET_TOKEN_PICKLE) if target_auth else None
+    
+    return {
+        'source': source_auth,
+        'target': target_auth,
+        'source_email': source_user_info.get('email') if source_user_info else None,
+        'target_email': target_user_info.get('email') if target_user_info else None,
+        'source_name': source_user_info.get('name') if source_user_info else None,
+        'target_name': target_user_info.get('name') if target_user_info else None,
+        'source_picture': source_user_info.get('picture') if source_user_info else None,
+        'target_picture': target_user_info.get('picture') if target_user_info else None
     }
-    
-    # Verificar cuenta de origen
-    source_info = get_user_info_from_credentials(SOURCE_TOKEN_PICKLE)
-    if source_info:
-        auth_status['source'] = True
-        auth_status['source_email'] = source_info.get('email', 'Cuenta conectada')
-    
-    # Verificar cuenta de destino
-    target_info = get_user_info_from_credentials(TARGET_TOKEN_PICKLE)
-    if target_info:
-        auth_status['target'] = True
-        auth_status['target_email'] = target_info.get('email', 'Cuenta conectada')
-    
-    return auth_status
 
 @app.route('/')
 def index():
     # Verificar estado de autenticación sin consumir cuota
     auth_status = check_auth_status()
-    return render_template('index.html', auth_status=auth_status)
+    
+    # Obtener resumen de la transferencia de la sesión
+    transfer_summary = session.pop('transfer_summary', None)
+    
+    return render_template('index.html', auth_status=auth_status, transfer_summary=transfer_summary)
 
 @app.route('/auth/source')
 def auth_source():
@@ -571,7 +632,15 @@ def auth_source():
         else:
             flash('Cuenta de origen autenticada correctamente', 'success')
     except Exception as e:
-        flash(f'Error al autenticar la cuenta de origen: {str(e)}', 'error')
+        # Verificar si es un error de scope
+        error_str = str(e).lower()
+        if "scope has changed" in error_str:
+            # Eliminar el archivo de token para volver a autenticar correctamente
+            if os.path.exists(SOURCE_TOKEN_PICKLE):
+                os.remove(SOURCE_TOKEN_PICKLE)
+            flash('Se detectó un cambio en los permisos requeridos. Por favor, intenta conectar la cuenta nuevamente.', 'warning')
+        else:
+            flash(f'Error al autenticar la cuenta de origen: {str(e)}', 'error')
     
     return redirect(url_for('index'))
 
@@ -589,7 +658,15 @@ def auth_target():
         else:
             flash('Cuenta de destino autenticada correctamente', 'success')
     except Exception as e:
-        flash(f'Error al autenticar la cuenta de destino: {str(e)}', 'error')
+        # Verificar si es un error de scope
+        error_str = str(e).lower()
+        if "scope has changed" in error_str:
+            # Eliminar el archivo de token para volver a autenticar correctamente
+            if os.path.exists(TARGET_TOKEN_PICKLE):
+                os.remove(TARGET_TOKEN_PICKLE)
+            flash('Se detectó un cambio en los permisos requeridos. Por favor, intenta conectar la cuenta nuevamente.', 'warning')
+        else:
+            flash(f'Error al autenticar la cuenta de destino: {str(e)}', 'error')
     
     return redirect(url_for('index'))
 
@@ -612,6 +689,16 @@ def select_subscriptions():
         
         return render_template('select_subscriptions.html', subscriptions=subscriptions)
     
+    except googleapiclient.errors.HttpError as e:
+        error_content = e.content.decode() if hasattr(e, 'content') else str(e)
+        
+        # Verificar si es un error de exceso de cuota
+        if "quota" in error_content.lower() or "429" in error_content:
+            flash('Has alcanzado el límite diario de la API de YouTube. Por favor, espera 24 horas y vuelve a intentarlo.', 'warning')
+        else:
+            flash(f'Error al obtener las suscripciones: {str(e)}', 'error')
+        
+        return redirect(url_for('index'))
     except Exception as e:
         flash(f'Error al obtener las suscripciones: {str(e)}', 'error')
         return redirect(url_for('index'))
@@ -632,6 +719,16 @@ def select_liked_videos():
         
         return render_template('select_liked_videos.html', liked_videos=liked_videos)
     
+    except googleapiclient.errors.HttpError as e:
+        error_content = e.content.decode() if hasattr(e, 'content') else str(e)
+        
+        # Verificar si es un error de exceso de cuota
+        if "quota" in error_content.lower() or "429" in error_content:
+            flash('Has alcanzado el límite diario de la API de YouTube. Por favor, espera 24 horas y vuelve a intentarlo.', 'warning')
+        else:
+            flash(f'Error al obtener los videos con "Me gusta": {str(e)}', 'error')
+        
+        return redirect(url_for('index'))
     except Exception as e:
         flash(f'Error al obtener los videos con "Me gusta": {str(e)}', 'error')
         return redirect(url_for('index'))
@@ -655,6 +752,16 @@ def select_playlists():
         
         return render_template('select_playlists.html', playlists=playlists)
     
+    except googleapiclient.errors.HttpError as e:
+        error_content = e.content.decode() if hasattr(e, 'content') else str(e)
+        
+        # Verificar si es un error de exceso de cuota
+        if "quota" in error_content.lower() or "429" in error_content:
+            flash('Has alcanzado el límite diario de la API de YouTube. Por favor, espera 24 horas y vuelve a intentarlo.', 'warning')
+        else:
+            flash(f'Error al obtener las listas de reproducción: {str(e)}', 'error')
+        
+        return redirect(url_for('index'))
     except Exception as e:
         flash(f'Error al obtener las listas de reproducción: {str(e)}', 'error')
         return redirect(url_for('index'))
@@ -674,6 +781,9 @@ def transfer():
         # Determinar el tipo de transferencia
         transfer_type = request.form.get('transfer_type', 'subscriptions')
         
+        # Diccionario para almacenar el resumen de la transferencia
+        transfer_summary = {}
+        
         # Transferir suscripciones
         if transfer_type == 'subscriptions' or transfer_type == 'all':
             selected_channels = request.form.getlist('selected_channels')
@@ -688,11 +798,23 @@ def transfer():
                         subscriptions.append(channel)
                 
                 success_count, failed_count, already_subscribed_count = subscribe_to_channels(youtube_target, subscriptions)
+                transfer_summary['subscriptions'] = {
+                    'success': success_count,
+                    'failed': failed_count,
+                    'existing': already_subscribed_count,
+                    'total': len(subscriptions)
+                }
                 flash(f'Transferencia de suscripciones completada: {success_count} transferidas, {failed_count} fallidas, {already_subscribed_count} ya existentes', 'success')
             elif transfer_type == 'all':
                 # Transferir todas las suscripciones
                 subscriptions = get_subscriptions(youtube_source)
                 success_count, failed_count, already_subscribed_count = subscribe_to_channels(youtube_target, subscriptions)
+                transfer_summary['subscriptions'] = {
+                    'success': success_count,
+                    'failed': failed_count,
+                    'existing': already_subscribed_count,
+                    'total': len(subscriptions)
+                }
                 flash(f'Transferencia de suscripciones completada: {success_count} transferidas, {failed_count} fallidas, {already_subscribed_count} ya existentes', 'success')
         
         # Transferir videos con "Me gusta"
@@ -709,11 +831,23 @@ def transfer():
                         videos.append(video)
                 
                 success_count, failed_count, already_liked_count = like_videos(youtube_target, videos)
+                transfer_summary['liked_videos'] = {
+                    'success': success_count,
+                    'failed': failed_count,
+                    'existing': already_liked_count,
+                    'total': len(videos)
+                }
                 flash(f'Transferencia de "Me gusta" completada: {success_count} transferidos, {failed_count} fallidos, {already_liked_count} ya existentes', 'success')
             elif transfer_type == 'all':
                 # Transferir todos los videos con "Me gusta"
                 liked_videos = get_liked_videos(youtube_source)
                 success_count, failed_count, already_liked_count = like_videos(youtube_target, liked_videos)
+                transfer_summary['liked_videos'] = {
+                    'success': success_count,
+                    'failed': failed_count,
+                    'existing': already_liked_count,
+                    'total': len(liked_videos)
+                }
                 flash(f'Transferencia de "Me gusta" completada: {success_count} transferidos, {failed_count} fallidos, {already_liked_count} ya existentes', 'success')
         
         # Transferir listas de reproducción
@@ -730,12 +864,38 @@ def transfer():
                         playlists_to_transfer.append(playlist)
                 
                 playlists_success, playlists_failed, videos_success, videos_failed = transfer_playlists(youtube_source, youtube_target, playlists_to_transfer)
+                transfer_summary['playlists'] = {
+                    'success': playlists_success,
+                    'failed': playlists_failed,
+                    'videos_success': videos_success,
+                    'videos_failed': videos_failed,
+                    'total': len(playlists_to_transfer)
+                }
                 flash(f'Transferencia de listas de reproducción completada: {playlists_success} listas transferidas, {playlists_failed} fallidas, {videos_success} videos añadidos, {videos_failed} videos fallidos', 'success')
             elif transfer_type == 'all':
                 # Transferir todas las listas de reproducción
                 playlists = get_playlists(youtube_source)
                 playlists_success, playlists_failed, videos_success, videos_failed = transfer_playlists(youtube_source, youtube_target, playlists)
+                transfer_summary['playlists'] = {
+                    'success': playlists_success,
+                    'failed': playlists_failed,
+                    'videos_success': videos_success,
+                    'videos_failed': videos_failed,
+                    'total': len(playlists)
+                }
                 flash(f'Transferencia de listas de reproducción completada: {playlists_success} listas transferidas, {playlists_failed} fallidas, {videos_success} videos añadidos, {videos_failed} videos fallidos', 'success')
+        
+        # Almacenar el resumen en la sesión para mostrarlo en la página principal
+        session['transfer_summary'] = transfer_summary
+        
+    except googleapiclient.errors.HttpError as e:
+        error_content = e.content.decode() if hasattr(e, 'content') else str(e)
+        
+        # Verificar si es un error de exceso de cuota
+        if "quota" in error_content.lower() or "429" in error_content:
+            flash('Has alcanzado el límite diario de la API de YouTube. Por favor, espera 24 horas y vuelve a intentarlo. Tu progreso se guardará y el proceso continuará por donde lo dejaste.', 'warning')
+        else:
+            flash(f'Error durante la transferencia: {str(e)}', 'error')
     
     except Exception as e:
         flash(f'Error durante la transferencia: {str(e)}', 'error')

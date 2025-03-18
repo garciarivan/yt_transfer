@@ -38,7 +38,7 @@
                         </div>
                     </div>
                     <div class="card-body">
-                        <form action="{{ url_for('transfer') }}" method="post" id="liked-videos-form">
+                        <form action="{{ url_for('transfer') }}" method="post" id="liked-videos-form" class="transfer-form" data-transfer-type="videos con Me gusta seleccionados">
                             <input type="hidden" name="transfer_type" value="liked_videos">
                             
                             <div class="d-flex justify-content-between mb-3">
@@ -163,8 +163,34 @@
                     e.preventDefault();
                     return false;
                 }
+                
+                // Mostrar modal de carga
+                const loadingModal = new bootstrap.Modal(document.getElementById('loadingModal'));
+                document.getElementById('transferTypeText').innerText = `Transfiriendo ${selectedCount} videos con Me gusta...`;
+                loadingModal.show();
             });
         });
     </script>
+
+    <!-- Modal de carga durante la transferencia -->
+    <div class="modal fade" id="loadingModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="loadingModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="loadingModalLabel">Transferencia en proceso</h5>
+                </div>
+                <div class="modal-body text-center py-4">
+                    <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
+                        <span class="visually-hidden">Cargando...</span>
+                    </div>
+                    <h5 id="transferTypeText">Transfiriendo videos con Me gusta...</h5>
+                    <p class="text-muted">Este proceso puede tardar varios minutos dependiendo de la cantidad de contenido.</p>
+                    <div class="progress mt-3">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 100%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 </html> 
